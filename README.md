@@ -55,6 +55,14 @@ run_app.bat
 
 This will start the Flask application, and you can access it at `http://localhost:8000`.
 
+## Running GUI with WSGI
+
+```cmd
+waitress-serve --listen=127.0.0.1:8000 app:app
+```
+
+This will run GUI in production mode on port 8000.
+
 ## Project Structure
 
 - `data/`: Contains training, validation, and test datasets.
