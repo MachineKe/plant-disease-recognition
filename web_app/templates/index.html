@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plant Disease Recognition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6366F1', // bolt-like purple
+            secondary: '#F3F4F6',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-secondary font-sans min-h-screen flex items-center justify-center px-4">
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <h1 class="text-2xl md:text-3xl font-bold text-primary text-center mb-6">🌿 Plant Disease Recognition</h1>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+      <input 
+        type="file" 
+        name="image" 
+        required 
+        class="w-full file:py-2 file:px-4 file:border file:border-primary file:rounded file:bg-primary file:text-white file:cursor-pointer text-sm"
+      >
+      <button 
+        type="submit" 
+        class="w-full bg-primary hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded transition-all"
+      >
+        Predict
+      </button>
+    </form>
+
+    {% if image_path %}
+    <div class="mt-6 text-center">
+      <h3 class="text-lg font-semibold text-gray-800">Prediction: <span class="text-primary">{{ predicted_class }}</span></h3>
+      <h4 class="text-sm text-gray-600 mt-1">Confidence: {{ confidence }}%</h4>
+      <div class="mt-4">
+        <img 
+          src="{{ url_for('static', filename='uploaded_image.jpg') }}" 
+          alt="Uploaded Image" 
+          class="mx-auto rounded-lg shadow-md max-h-48 object-contain"
+        >
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>

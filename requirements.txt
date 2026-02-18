@@ -1,0 +1,9 @@
+tensorflow==2.15.0
+opencv-python==4.9.0.80
+numpy==1.26.4
+matplotlib==3.8.3
+scikit-learn==1.4.1.post1
+flask==3.1.0
+python-docx==1.1.0
+beautifulsoup4==4.12.3
+markdown==3.6
