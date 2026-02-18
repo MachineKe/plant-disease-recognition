@@ -4,6 +4,8 @@ This project implements a deep learning pipeline for classifying plant diseases 
 
 ## Environment Setup
 
+## Install Python 3.11: Ensure you have Python 3.11.x installed on your system.
+
 ### Step 1: Create Virtual Environment
 
 Open your terminal or command prompt in the project directory and run:
