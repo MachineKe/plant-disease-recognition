@@ -62,3 +62,4 @@ This will start the Flask application, and you can access it at `http://localhos
 - `train_model.py`: Python script version of the notebook.
 - `requirements.txt`: Python dependencies required for the project.
 # plant-disease-recognition
+# plant-disease-detection-mono
