@@ -60,6 +60,7 @@ This will start the Flask application, and you can access it at `http://localhos
 ## Running GUI with WSGI
 
 ```cmd
+cd web_app
 waitress-serve --listen=127.0.0.1:8000 app:app
 ```
 
