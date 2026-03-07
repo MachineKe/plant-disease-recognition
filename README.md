@@ -16,16 +16,22 @@ python -m venv plant-disease-env
 
 ### Step 2: Activate Virtual Environment
 
-- **On Command Prompt:**
+- **On Windows (Command Prompt):**
 
 ```bash
 plant-disease-env\Scripts\activate.bat
 ```
 
-- **On PowerShell:**
+- **On Windows (PowerShell):**
 
 ```powershell
 .\plant-disease-env\Scripts\Activate.ps1
+```
+
+- **On Linux (e.g., Ubuntu):**
+
+```bash
+source plant-disease-env/bin/activate
 ```
 
 ### Step 3: Install Dependencies
@@ -50,21 +56,47 @@ This will open the notebook in your default web browser, allowing you to execute
 
 After installing dependencies, launch the Flask GUI:
 
+- **On Windows:**
+
 ```cmd
 cd web_app
 run_app.bat
+```
+
+- **On Linux:**
+
+```bash
+cd web_app
+python app.py
 ```
 
 This will start the Flask application, and you can access it at `http://localhost:8000`.
 
 ## Running GUI with WSGI
 
+- **On Windows:**
+
 ```cmd
 cd web_app
 waitress-serve --listen=127.0.0.1:8000 app:app
 ```
 
-This will run GUI in production mode on port 8000.
+- **On Linux:**
+
+First, install gunicorn:
+
+```bash
+pip install gunicorn
+```
+
+Then run:
+
+```bash
+cd web_app
+gunicorn --bind 0.0.0.0:8000 app:app
+```
+
+This will run the GUI in production mode on port 8000.
 
 ## Project Structure
 
