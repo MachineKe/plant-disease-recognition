@@ -4,7 +4,26 @@ This project implements a deep learning pipeline for classifying plant diseases 
 
 ## Environment Setup
 
-## Install Python 3.11: Ensure you have Python 3.11.x installed on your system.
+### Using Python 3.11 on Linux (Ubuntu)
+
+1. **Check your current Python version:**
+   ```bash
+   python3 --version
+   ```
+   If the output is not `Python 3.11.x`, proceed to install Python 3.11.
+
+2. **Install Python 3.11 and required packages:**
+   ```bash
+   sudo apt update
+   sudo apt install python3.11 python3.11-venv python3.11-dev
+   ```
+
+3. **Set up the virtual environment using Python 3.11:**
+   ```bash
+   python3.11 -m venv plant-disease-env
+   ```
+
+> **Important:** Always use `python3.11` and `pip` from the `plant-disease-env` virtual environment to ensure you are using the correct Python version for all steps below.
 
 ### Step 1: Create Virtual Environment
 
