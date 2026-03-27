@@ -2,19 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install only essential build tools
 RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements from root
+# Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the web_app directory
-COPY web_app/ ./web_app/
-
-WORKDIR /app/web_app
+COPY web_app/ .
 
 # Expose the port
 EXPOSE 8000
