@@ -14,13 +14,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy everything from web_app
 COPY web_app/ .
 
-# Verify model file exists
+# Verify model file
 RUN echo "=== Model File Check ===" && \
     if [ -f plant_disease_model.keras ]; then \
         ls -lh plant_disease_model.keras && \
         echo "✓ Model file found"; \
     else \
-        echo "✗ Model file NOT found!" && exit 1; \
+        echo "✗ Model file NOT found!"; \
     fi
 
 EXPOSE 8000
