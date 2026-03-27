@@ -16,34 +16,22 @@ print("="*60)
 print(f"Python version: {sys.version}")
 print(f"TensorFlow version: {tf.__version__}")
 print(f"Base directory: {BASE_DIR}")
-print(f"Current working directory: {os.getcwd()}")
-print(f"Files in BASE_DIR: {[f.name for f in BASE_DIR.iterdir() if f.is_file()]}")
-print(f"Directories in BASE_DIR: {[d.name for d in BASE_DIR.iterdir() if d.is_dir()]}")
 
-# Look for model files
-print("\n" + "="*60)
-print("Looking for model files:")
-keras_files = list(BASE_DIR.glob("*.keras"))
-h5_files = list(BASE_DIR.glob("*.h5"))
-print(f".keras files found: {[f.name for f in keras_files]}")
-print(f".h5 files found: {[f.name for f in h5_files]}")
-
-if keras_files:
-    for kf in keras_files:
-        size_mb = kf.stat().st_size / (1024 * 1024)
-        print(f"  - {kf.name}: {size_mb:.2f} MB")
-else:
-    print("No .keras files found!")
-print("="*60)
+# List files
+print("\nFiles in base directory:")
+for item in BASE_DIR.iterdir():
+    if item.is_file():
+        size_mb = item.stat().st_size / (1024 * 1024)
+        print(f"  📄 {item.name} ({size_mb:.2f} MB)")
 
 app = Flask(__name__)
 CORS(app)
 
-# Load model
+# Load model - look for .h5 file
 model = None
-model_path = BASE_DIR / 'plant_disease_model.keras'
+model_path = BASE_DIR / 'plant_disease_model.h5'
 
-print(f"\nAttempting to load model from: {model_path}")
+print(f"\nLooking for model at: {model_path}")
 
 if model_path.exists():
     file_size_mb = model_path.stat().st_size / (1024 * 1024)
@@ -55,9 +43,8 @@ if model_path.exists():
         print("✓ Model loaded successfully!")
         print(f"Model input shape: {model.input_shape}")
         print(f"Model output shape: {model.output_shape}")
-        print(f"Number of layers: {len(model.layers)}")
         
-        # Test model with dummy input
+        # Test with dummy input
         import numpy as np
         dummy_input = np.random.rand(1, 224, 224, 3).astype(np.float32)
         dummy_output = model.predict(dummy_input, verbose=0)
@@ -70,10 +57,6 @@ if model_path.exists():
         model = None
 else:
     print(f"✗ Model file NOT found at {model_path}")
-    print(f"Available files in {BASE_DIR}:")
-    for f in BASE_DIR.iterdir():
-        if f.is_file():
-            print(f"  - {f.name}")
 
 class_labels = ['Healthy', 'Powdery', 'Rust']
 
@@ -83,7 +66,7 @@ def health():
         'status': 'healthy' if model is not None else 'degraded',
         'model_loaded': model is not None,
         'model_path': str(model_path) if model_path.exists() else 'Not found',
-        'files_in_dir': [f.name for f in BASE_DIR.iterdir() if f.is_file()][:10]
+        'model_file_size_mb': model_path.stat().st_size / (1024 * 1024) if model_path.exists() else 0
     })
 
 @app.route('/predict', methods=['POST'])
@@ -105,17 +88,13 @@ def predict():
     file.save(str(img_path))
     
     try:
-        # Load and preprocess image
         img = image.load_img(str(img_path), target_size=(224, 224))
         img_array = image.img_to_array(img) / 255.0
         img_array = tf.expand_dims(img_array, axis=0)
-        
-        # Predict
         predictions = model.predict(img_array, verbose=0)
         predicted_class = class_labels[tf.argmax(predictions[0])]
         confidence = float(tf.reduce_max(predictions[0]) * 100)
         
-        # Class breakdown
         class_breakdown = [
             {'label': class_labels[i], 'confidence': float(predictions[0][i] * 100)}
             for i in range(len(class_labels))
@@ -127,7 +106,6 @@ def predict():
             'class_breakdown': class_breakdown,
             'image_url': '/static/uploaded_image.jpg'
         })
-        
     except Exception as e:
         print(f"Prediction error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -142,7 +120,6 @@ def index():
             img_path = static_dir / 'uploaded_image.jpg'
             file.save(str(img_path))
             
-            # Make prediction
             if model:
                 img = image.load_img(str(img_path), target_size=(224, 224))
                 img_array = image.img_to_array(img) / 255.0
