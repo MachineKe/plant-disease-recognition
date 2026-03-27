@@ -67,7 +67,26 @@ def predict():
     img_path = 'static/uploaded_image.jpg'
     file.save(img_path)
     
-    predicted_class, confidence = predict_image(img_path)
+    # Predict and get probabilities for all classes
+    if model is None:
+        return jsonify({'error': 'Model not loaded'}), 500
+    try:
+        img = image.load_img(img_path, target_size=(224, 224))
+        img_array = image.img_to_array(img) / 255.0
+        img_array = tf.expand_dims(img_array, axis=0)
+        predictions = model.predict(img_array)
+        predicted_class = class_labels[tf.argmax(predictions[0])]
+        confidence = float(tf.reduce_max(predictions[0]) * 100)
+        class_breakdown = [
+            {
+                'label': class_labels[i],
+                'confidence': float(predictions[0][i] * 100)
+            }
+            for i in range(len(class_labels))
+        ]
+    except Exception as e:
+        print(f"Error in prediction: {e}")
+        return jsonify({'error': 'Error during prediction'}), 500
     
     # Store for visualization endpoint
     last_prediction['img_path'] = img_path
@@ -79,8 +98,9 @@ def predict():
     
     return jsonify({
         'predicted_class': predicted_class,
-        'confidence': float(confidence),
-        'image_url': image_url
+        'confidence': confidence,
+        'image_url': image_url,
+        'class_breakdown': class_breakdown
     })
 
 @app.route('/visualization', methods=['GET'])
