@@ -1,0 +1,3 @@
+echo "*.keras binary" > .gitattributes
+echo "*.h5 binary" >> .gitattributes
+echo "*.hdf5 binary" >> .gitattributes
