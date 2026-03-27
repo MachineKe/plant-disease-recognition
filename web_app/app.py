@@ -5,6 +5,7 @@ import numpy as np
 import os
 from flask_cors import CORS
 import sys
+import traceback
 from pathlib import Path
 
 # Get the directory where this file is located
@@ -15,12 +16,14 @@ print("Plant Disease Recognition App - Starting...")
 print("="*60)
 print(f"Base directory: {BASE_DIR}")
 print(f"Current working directory: {os.getcwd()}")
+print(f"TensorFlow version: {tf.__version__}")
 
 # List all files in base directory
 print("\nFiles in base directory:")
 for item in BASE_DIR.iterdir():
     if item.is_file():
-        print(f"  📄 {item.name}")
+        file_size = item.stat().st_size / (1024 * 1024)  # Size in MB
+        print(f"  📄 {item.name} ({file_size:.2f} MB)")
     elif item.is_dir():
         print(f"  📁 {item.name}/")
 
@@ -30,6 +33,22 @@ keras_files = list(BASE_DIR.glob("*.keras"))
 h5_files = list(BASE_DIR.glob("*.h5"))
 print(f"  .keras files: {[f.name for f in keras_files]}")
 print(f"  .h5 files: {[f.name for f in h5_files]}")
+
+# Check model file size and integrity
+if keras_files:
+    model_file = keras_files[0]
+    file_size = model_file.stat().st_size
+    print(f"\nModel file details:")
+    print(f"  Path: {model_file}")
+    print(f"  Size: {file_size / (1024*1024):.2f} MB")
+    
+    # Try to read first few bytes to verify it's not corrupted
+    try:
+        with open(model_file, 'rb') as f:
+            header = f.read(100)
+            print(f"  File header (first 100 bytes): {header[:50]}...")
+    except Exception as e:
+        print(f"  Error reading file: {e}")
 print("="*60)
 
 app = Flask(__name__)
@@ -49,9 +68,9 @@ last_prediction = {
     'confidence': None
 }
 
-# Load model - try multiple possible names and locations
+# Load model with detailed error handling
 def load_model():
-    """Load the model from various possible locations"""
+    """Load the model with detailed error logging"""
     possible_model_names = [
         'plant_disease_model.keras',
         'plant_disease_model.h5',
@@ -59,7 +78,7 @@ def load_model():
         'model.h5'
     ]
     
-    # Search in BASE_DIR and its subdirectories
+    # Search in BASE_DIR
     search_dirs = [BASE_DIR, BASE_DIR / 'models', BASE_DIR.parent]
     
     for search_dir in search_dirs:
@@ -71,28 +90,74 @@ def load_model():
             model_path = search_dir / model_name
             if model_path.exists():
                 print(f"✓ Found model at: {model_path}")
+                print(f"  File size: {model_path.stat().st_size / (1024*1024):.2f} MB")
+                
                 try:
-                    model = tf.keras.models.load_model(str(model_path))
-                    print(f"✓ Model loaded successfully!")
-                    return model, str(model_path)
+                    print(f"  Attempting to load model...")
+                    # Try loading with different methods
+                    try:
+                        model = tf.keras.models.load_model(str(model_path))
+                        print(f"✓ Model loaded successfully!")
+                        return model, str(model_path)
+                    except Exception as e1:
+                        print(f"  Standard load failed: {e1}")
+                        
+                        # Try with custom objects if needed
+                        try:
+                            print(f"  Trying with custom_objects...")
+                            model = tf.keras.models.load_model(
+                                str(model_path),
+                                custom_objects={'tf': tf}
+                            )
+                            print(f"✓ Model loaded successfully with custom_objects!")
+                            return model, str(model_path)
+                        except Exception as e2:
+                            print(f"  Custom objects load failed: {e2}")
+                            
+                            # Try with compile=False
+                            try:
+                                print(f"  Trying with compile=False...")
+                                model = tf.keras.models.load_model(
+                                    str(model_path),
+                                    compile=False
+                                )
+                                print(f"✓ Model loaded successfully with compile=False!")
+                                return model, str(model_path)
+                            except Exception as e3:
+                                print(f"  Compile=False load failed: {e3}")
+                                print(f"\n  Full traceback:")
+                                traceback.print_exc()
+                                continue
+                                
                 except Exception as e:
                     print(f"✗ Error loading model: {e}")
+                    traceback.print_exc()
                     continue
     
-    print("\n✗ No model found in any location")
+    print("\n✗ No model found or model failed to load in any location")
     return None, None
 
 # Load the model
 model, model_path = load_model()
 
 if model:
+    print("\n✓ Model loaded successfully!")
     print("\nModel summary:")
     try:
         model.summary()
     except:
-        pass
+        print("  Could not print model summary")
+    
+    # Test with a dummy input to verify it works
+    try:
+        dummy_input = np.random.rand(1, 224, 224, 3).astype(np.float32)
+        dummy_output = model.predict(dummy_input, verbose=0)
+        print(f"\n✓ Model test prediction successful! Output shape: {dummy_output.shape}")
+    except Exception as e:
+        print(f"\n⚠️ Model test prediction failed: {e}")
 else:
     print("\n⚠️  WARNING: Model not loaded. Predictions will not work.")
+    print("Check the logs above for detailed error information.")
 
 class_labels = ['Healthy', 'Powdery', 'Rust']
 
@@ -111,6 +176,7 @@ def predict_image(img_path):
         return predicted_class, confidence
     except Exception as e:
         print(f"Error in prediction: {e}")
+        traceback.print_exc()
         return "Error", 0
 
 @app.route('/predict', methods=['POST'])
@@ -150,6 +216,7 @@ def predict():
         ]
     except Exception as e:
         print(f"Error in prediction: {e}")
+        traceback.print_exc()
         return jsonify({'error': f'Error during prediction: {str(e)}'}), 500
     
     # Store for visualization endpoint
@@ -171,24 +238,26 @@ def health():
         'status': 'healthy' if model is not None else 'degraded',
         'model_loaded': model is not None,
         'model_path': model_path if model_path else 'Not found',
-        'base_directory': str(BASE_DIR)
+        'base_directory': str(BASE_DIR),
+        'tensorflow_version': tf.__version__
     })
 
 @app.route('/model-status', methods=['GET'])
 def model_status():
     """Debug endpoint to check model status"""
-    # List all files in base directory
+    # List all files in base directory with sizes
     files = []
     for item in BASE_DIR.iterdir():
         if item.is_file():
-            files.append(item.name)
+            size_mb = item.stat().st_size / (1024 * 1024)
+            files.append(f"{item.name} ({size_mb:.2f} MB)")
     
     # Find all model files
     model_files = []
     for ext in ['*.keras', '*.h5', '*.hdf5']:
-        model_files.extend([f.name for f in BASE_DIR.glob(ext)])
-        if (BASE_DIR / 'models').exists():
-            model_files.extend([f"models/{f.name}" for f in (BASE_DIR / 'models').glob(ext)])
+        for f in BASE_DIR.glob(ext):
+            size_mb = f.stat().st_size / (1024 * 1024)
+            model_files.append(f"{f.name} ({size_mb:.2f} MB)")
     
     return jsonify({
         'model_loaded': model is not None,
@@ -196,7 +265,8 @@ def model_status():
         'base_directory': str(BASE_DIR),
         'files_in_directory': files[:30],
         'model_files_found': model_files,
-        'tensorflow_version': tf.__version__
+        'tensorflow_version': tf.__version__,
+        'python_version': sys.version
     })
 
 @app.route('/visualization', methods=['GET'])
