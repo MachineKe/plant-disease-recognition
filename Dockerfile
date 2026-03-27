@@ -5,20 +5,19 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
-    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install
 COPY web_app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy and unzip the model
-COPY model.zip .
-RUN unzip model.zip && \
-    rm model.zip
+# Copy the model first (direct copy, no zip)
+COPY web_app/plant_disease_model.keras .
 
 # Copy the rest of the web_app
-COPY web_app/ .
+COPY web_app/app.py .
+COPY web_app/templates ./templates/
+COPY web_app/static ./static/
 
 # Verify model exists and is valid
 RUN echo "=== Model Verification ===" && \
