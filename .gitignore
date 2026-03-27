@@ -1,3 +1,4 @@
 /%USERPROFILE%
 .venv
 plant-disease-env
+.env
