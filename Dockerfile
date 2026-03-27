@@ -14,13 +14,19 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy everything from web_app
 COPY web_app/ .
 
-# Verify model file
-RUN echo "=== Model File Check ===" && \
+# Debug: Show what was copied
+RUN echo "=== Directory contents after copy ===" && \
+    ls -la && \
+    echo "=== Looking for model files ===" && \
+    find . -name "*.keras" -type f -exec ls -lh {} \; && \
+    echo "=== Checking if model file is valid ===" && \
     if [ -f plant_disease_model.keras ]; then \
+        echo "Model file exists:" && \
         ls -lh plant_disease_model.keras && \
-        echo "✓ Model file found"; \
+        file plant_disease_model.keras || echo "Cannot determine file type"; \
     else \
-        echo "✗ Model file NOT found!"; \
+        echo "Model file NOT found!" && \
+        echo "Available files:" && ls -la; \
     fi
 
 EXPOSE 8000
